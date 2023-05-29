@@ -26,3 +26,18 @@ char mtext [MAX_MESSAGE_SIZE];
 
 };
 
+int main() {
+
+    
+
+    key_t key;
+
+    int message_queue_id;
+
+    
+
+    struct message msg;
+
+
+}
+
