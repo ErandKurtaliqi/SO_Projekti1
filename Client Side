@@ -84,5 +84,18 @@ key = ftok(".", 'q');
  
     
 
-  
+    msgrcv(message_queue_id, &msg, MAX_MESSAGE_SIZE, getpid(), 0);
+
+    
+
+    printf("Server response: %s\n", msg.mtext);
+
+    printf("Enter a message ('exit' to quit): ");
+
+    }
+
+
+
+    return 0;
+}
 
