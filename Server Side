@@ -46,3 +46,51 @@ void *handle_client(void *arg) {
 
     pthread_exit(NULL);
 }
+
+
+int main() {
+    key_t key;
+    int client_id = 1;
+    struct message msg;
+
+    key = ftok(".", 'q');
+    if (key == -1) {
+        perror("ftok");
+        exit(1);
+    }
+
+    message_queue_id = msgget(key, IPC_CREAT | 0666);
+    if (message_queue_id == -1) {
+        perror("msgget");
+        exit(1);
+    }
+
+    pthread_mutex_init(&client_count_mutex, NULL);
+
+    while (1) {
+        msgrcv(message_queue_id, &msg, MAX_MESSAGE_SIZE, 1, IPC_NOWAIT);
+
+        pthread_mutex_lock(&client_count_mutex);
+
+        if (client_count >= MAX_CLIENTS) {
+            pthread_mutex_unlock(&client_count_mutex);
+            sleep(1);
+            continue;
+        }
+
+        clients[client_id - 1].client_id = client_id;
+        pthread_create(&clients[client_id - 1].thread, NULL, handle_client, (void *)&clients[client_id - 1].client_id);
+
+        client_count++;
+        printf("Client %d connected\n", client_id);
+
+        pthread_mutex_unlock(&client_count_mutex);
+
+        client_id++;
+    }
+
+    pthread_mutex_destroy(&client_count_mutex);
+    msgctl(message_queue_id, IPC_RMID, NULL);
+
+    return 0;
+}
