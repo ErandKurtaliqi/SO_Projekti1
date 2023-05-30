@@ -1,1 +1,48 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <pthread.h>
 
+#define MAX_CLIENTS 10
+#define MAX_MESSAGE_SIZE 256
+
+struct message {
+    long mtype;
+    char mtext[MAX_MESSAGE_SIZE];
+};
+
+struct client {
+    int client_id;
+    pthread_t thread;
+};
+
+int client_count = 0;
+pthread_mutex_t client_count_mutex;
+struct client clients[MAX_CLIENTS];
+int message_queue_id;
+
+void *handle_client(void *arg) {
+    int client_id = *((int *)arg);
+
+    struct message msg;
+    while (1) {
+        msgrcv(message_queue_id, &msg, MAX_MESSAGE_SIZE, client_id, 0);
+
+        if (strcmp(msg.mtext, "exit") == 0) {
+            pthread_mutex_lock(&client_count_mutex);
+            client_count--;
+            pthread_mutex_unlock(&client_count_mutex);
+            break;
+        }
+
+        printf("Received message from client %d: %s\n", client_id, msg.mtext);
+
+        // Echo back the client's request data
+        msgsnd(message_queue_id, &msg, strlen(msg.mtext) + 1, 0);
+    }
+
+    pthread_exit(NULL);
+}
